@@ -1,0 +1,275 @@
+# YouTube Transcript App UI Layout
+
+<MainScreen>:
+    name: 'main'
+    
+    MDBoxLayout:
+        orientation: 'vertical'
+        
+        # Top Toolbar
+        MDTopAppBar:
+            title: "YouTube AI Summarizer"
+            right_action_items: [["cog", lambda x: app.switch_screen('settings')]]
+            elevation: 4
+        
+        # Main Content
+        MDBoxLayout:
+            orientation: 'vertical'
+            padding: dp(16)
+            spacing: dp(16)
+            
+            # URL Input
+            MDTextField:
+                id: url_input
+                hint_text: "YouTube URL"
+                helper_text: "Example: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                helper_text_mode: "persistent"
+                icon_right: "youtube"
+                mode: "rectangle"
+                size_hint_y: None
+                height: dp(56)
+            
+            # Buttons Row
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(48)
+                spacing: dp(8)
+                
+                MDRaisedButton:
+                    text: "Fetch Transcript"
+                    on_release: root.fetch_transcript()
+                    md_bg_color: app.theme_cls.primary_color
+                
+                MDRaisedButton:
+                    id: summarize_btn
+                    text: "AI Summary"
+                    on_release: root.create_ai_summary()
+                    disabled: True
+                    md_bg_color: app.theme_cls.accent_color
+                
+                MDRaisedButton:
+                    id: save_btn
+                    text: "Save"
+                    on_release: root.save_files()
+                    disabled: True
+                
+                MDFlatButton:
+                    text: "Clear"
+                    on_release: root.clear_all()
+            
+            # Progress Bar
+            MDProgressBar:
+                id: progress_bar
+                opacity: 0
+                size_hint_y: None
+                height: dp(4)
+            
+            # Status Label
+            MDLabel:
+                id: status_label
+                text: "Ready - Enter YouTube URL above"
+                size_hint_y: None
+                height: dp(24)
+                theme_text_color: "Secondary"
+            
+            # Tabs for Transcript and Summary
+            MDTabs:
+                id: tabs
+                
+                TranscriptTab:
+                    title: "Transcript"
+                    
+                    MDScrollView:
+                        MDLabel:
+                            id: transcript_text
+                            text: ""
+                            size_hint_y: None
+                            height: self.texture_size[1]
+                            padding: dp(16)
+                            adaptive_height: True
+                
+                SummaryTab:
+                    title: "Summary"
+                    
+                    MDScrollView:
+                        MDLabel:
+                            id: summary_text
+                            text: ""
+                            size_hint_y: None
+                            height: self.texture_size[1]
+                            padding: dp(16)
+                            adaptive_height: True
+                            markup: True
+
+
+<SettingsScreen>:
+    name: 'settings'
+    
+    MDBoxLayout:
+        orientation: 'vertical'
+        
+        # Top Toolbar
+        MDTopAppBar:
+            title: "Settings"
+            left_action_items: [["arrow-left", lambda x: app.switch_screen('main')]]
+            elevation: 4
+        
+        # Settings Content
+        MDScrollView:
+            MDBoxLayout:
+                orientation: 'vertical'
+                padding: dp(16)
+                spacing: dp(16)
+                adaptive_height: True
+                
+                # API Key Section
+                MDCard:
+                    orientation: 'vertical'
+                    padding: dp(16)
+                    spacing: dp(8)
+                    elevation: 2
+                    size_hint_y: None
+                    height: dp(200)
+                    
+                    MDLabel:
+                        text: "OpenAI Configuration"
+                        font_style: "H6"
+                        size_hint_y: None
+                        height: dp(32)
+                    
+                    MDTextField:
+                        id: api_key_input
+                        hint_text: "OpenAI API Key"
+                        password: True
+                        icon_right: "key"
+                        mode: "rectangle"
+                    
+                    MDRaisedButton:
+                        text: "Test API Key"
+                        on_release: root.test_api_key()
+                        size_hint_x: None
+                        width: dp(150)
+                    
+                    MDBoxLayout:
+                        size_hint_y: None
+                        height: dp(48)
+                        
+                        MDCheckbox:
+                            id: save_key_checkbox
+                            size_hint_x: None
+                            width: dp(48)
+                            on_active: root.toggle_save_key(self)
+                        
+                        MDLabel:
+                            text: "Save API key encrypted"
+                            theme_text_color: "Secondary"
+                
+                # Model Selection
+                MDCard:
+                    orientation: 'vertical'
+                    padding: dp(16)
+                    spacing: dp(8)
+                    elevation: 2
+                    size_hint_y: None
+                    height: dp(200)
+                    
+                    MDLabel:
+                        text: "AI Model"
+                        font_style: "H6"
+                        size_hint_y: None
+                        height: dp(32)
+                    
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        
+                        MDBoxLayout:
+                            size_hint_y: None
+                            height: dp(32)
+                            MDCheckbox:
+                                id: model_mini
+                                group: 'model'
+                                active: True
+                                size_hint_x: None
+                                width: dp(48)
+                                on_active: if self.active: root.update_model("gpt-4o-mini")
+                            MDLabel:
+                                text: "GPT-4o-mini (Fast & Cheap)"
+                        
+                        MDBoxLayout:
+                            size_hint_y: None
+                            height: dp(32)
+                            MDCheckbox:
+                                id: model_4o
+                                group: 'model'
+                                size_hint_x: None
+                                width: dp(48)
+                                on_active: if self.active: root.update_model("gpt-4o")
+                            MDLabel:
+                                text: "GPT-4o (More Capable)"
+                        
+                        MDBoxLayout:
+                            size_hint_y: None
+                            height: dp(32)
+                            MDCheckbox:
+                                id: model_35
+                                group: 'model'
+                                size_hint_x: None
+                                width: dp(48)
+                                on_active: if self.active: root.update_model("gpt-3.5-turbo")
+                            MDLabel:
+                                text: "GPT-3.5-turbo (Older)"
+                
+                # Summary Style
+                MDCard:
+                    orientation: 'vertical'
+                    padding: dp(16)
+                    spacing: dp(8)
+                    elevation: 2
+                    size_hint_y: None
+                    height: dp(200)
+                    
+                    MDLabel:
+                        text: "Summary Style"
+                        font_style: "H6"
+                        size_hint_y: None
+                        height: dp(32)
+                    
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        
+                        MDBoxLayout:
+                            size_hint_y: None
+                            height: dp(32)
+                            MDCheckbox:
+                                id: style_detailed
+                                group: 'style'
+                                active: True
+                                size_hint_x: None
+                                width: dp(48)
+                                on_active: if self.active: root.update_style("detailed")
+                            MDLabel:
+                                text: "Detailed with timestamps"
+                        
+                        MDBoxLayout:
+                            size_hint_y: None
+                            height: dp(32)
+                            MDCheckbox:
+                                id: style_brief
+                                group: 'style'
+                                size_hint_x: None
+                                width: dp(48)
+                                on_active: if self.active: root.update_style("brief")
+                            MDLabel:
+                                text: "Brief overview"
+                        
+                        MDBoxLayout:
+                            size_hint_y: None
+                            height: dp(32)
+                            MDCheckbox:
+                                id: style_key
+                                group: 'style'
+                                size_hint_x: None
+                                width: dp(48)
+                                on_active: if self.active: root.update_style("key_points")
+                            MDLabel:
+                                text: "Key points only"
