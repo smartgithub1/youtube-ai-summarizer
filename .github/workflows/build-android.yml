@@ -79,10 +79,10 @@
             libssl-dev \
             automake
 
-  - name: Build with buildozer
-    run: |
-      # Buildozer will handle Android SDK/NDK setup automatically
-      buildozer android debug || echo "Build failed with exit code $?"
+      - name: Build with buildozer
+        run: |
+         # Buildozer will handle Android SDK/NDK setup automatically
+         buildozer android debug || echo "Build failed with exit code $?"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
