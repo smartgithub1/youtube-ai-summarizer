@@ -1,111 +1,102 @@
-name: Build Android APK
+  name: Build Android APK
 
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:  # Allow manual triggering
+  on:
+    push:
+      branches: [ main, master ]
+    pull_request:
+      branches: [ main, master ]
+    workflow_dispatch:  # Allow manual triggering
 
-jobs:
-  build-android:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install buildozer
-        pip install kivy kivymd
-        pip install youtube-transcript-api openai keyring
-        
-    - name: Cache buildozer global directory
-      uses: actions/cache@v3
-      with:
-        path: ~/.buildozer
-        key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
-        restore-keys: |
-          ${{ runner.os }}-buildozer-
-          
-    - name: Cache buildozer directory
-      uses: actions/cache@v3
-      with:
-        path: .buildozer
-        key: ${{ runner.os }}-buildozer-local-${{ hashFiles('buildozer.spec') }}
-        restore-keys: |
-          ${{ runner.os }}-buildozer-local-
-          
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          build-essential \
-          git \
-          python3 \
-          python3-dev \
-          ffmpeg \
-          libsdl2-dev \
-          libsdl2-image-dev \
-          libsdl2-mixer-dev \
-          libsdl2-ttf-dev \
-          libportmidi-dev \
-          libswscale-dev \
-          libavformat-dev \
-          libavcodec-dev \
-          zlib1g-dev \
-          libgstreamer1.0 \
-          gstreamer1.0-plugins-base \
-          gstreamer1.0-plugins-good \
-          openjdk-11-jdk \
-          unzip
-          
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-      with:
-        api-level: 33
-        build-tools: 33.0.0
-        
-    - name: Accept Android SDK licenses
-      run: |
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        
-    - name: Build with buildozer
-      run: |
-        # Configure buildozer for GitHub Actions
-        export ANDROID_HOME=$ANDROID_SDK_ROOT
-        export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT
-        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
-        
-        # Initialize buildozer
-        buildozer android debug
-        
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: youtube-transcript-apk
-        path: bin/*.apk
-        
-    - name: Create Release (on tag)
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: bin/*.apk
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Upload to Release Assets
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      run: |
-        echo "APK built successfully!"
-        echo "Download from the Actions tab above."
-        ls -la bin/
+  jobs:
+    build-android:
+      runs-on: ubuntu-latest
+
+      steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install buildozer
+          pip install cython==0.29.33
+          pip install kivy kivymd
+          pip install youtube-transcript-api openai keyring
+
+      - name: Cache buildozer global directory
+        uses: actions/cache@v3
+        with:
+          path: ~/.buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
+
+      - name: Cache buildozer directory
+        uses: actions/cache@v3
+        with:
+          path: .buildozer
+          key: ${{ runner.os }}-buildozer-local-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-local-
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            git \
+            python3 \
+            python3-dev \
+            ffmpeg \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev \
+            libportmidi-dev \
+            libswscale-dev \
+            libavformat-dev \
+            libavcodec-dev \
+            zlib1g-dev \
+            libgstreamer1.0 \
+            gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good \
+            openjdk-17-jdk \
+            unzip \
+            autoconf \
+            libtool \
+            pkg-config \
+            zip \
+            libncurses5-dev \
+            libncursesw5-dev \
+            libtinfo5 \
+            cmake \
+            libffi-dev \
+            libssl-dev \
+            automake
+
+      - name: Build with buildozer
+        run: |
+          # Buildozer will handle Android SDK/NDK setup automatically
+          yes | buildozer android debug || true
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: youtube-transcript-apk
+          path: bin/*.apk
+          if-no-files-found: error
+
+      - name: Create Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: bin/*.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
