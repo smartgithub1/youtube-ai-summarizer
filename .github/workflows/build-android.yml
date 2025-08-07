@@ -54,6 +54,7 @@
             python3-dev \
             ffmpeg \
             libsdl2-dev \
+            gettext \
             libsdl2-image-dev \
             libsdl2-mixer-dev \
             libsdl2-ttf-dev \
