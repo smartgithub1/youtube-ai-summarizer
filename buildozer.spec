@@ -13,7 +13,7 @@ source.include_exts = py,png,jpg,kv,atlas
 version = 1.0
 
 # Requirements
-requirements = python3,kivy,kivymd,youtube-transcript-api,openai,keyring,requests,urllib3,certifi,charset-normalizer,idna
+requirements = python3,kivy,kivymd,youtube-transcript-api,openai,requests,urllib3,certifi,charset-normalizer,idna
 
 # Permissions for Android
 android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
