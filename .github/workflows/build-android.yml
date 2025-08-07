@@ -77,6 +77,7 @@
             cmake \
             libffi-dev \
             libssl-dev \
+            autoconf-archive \
             automake
 
       - name: Build with buildozer
