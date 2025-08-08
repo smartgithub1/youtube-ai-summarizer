@@ -19,13 +19,14 @@ requirements = python3,kivy,kivymd,youtube-transcript-api,openai,requests,urllib
 android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 
 # Android specific
-android.api = 33
+android.api = 30
 android.minapi = 21
-android.ndk = 25b
-android.sdk = 33
+android.ndk = 23c
+android.sdk = 30
 android.accept_sdk_license = True
 android.gradle_dependencies = 
-
+p4a.bootstrap = sdl2
+android.gradle_dependencies = com.android.support:support-v4:28.0.0
 # Icons (optional)
 #icon.filename = %(source.dir)s/icon.png
 
