@@ -8,19 +8,39 @@
 
   jobs:
     build:
-      runs-on: ubuntu-latest
+      runs-on: ubuntu-20.04
 
       steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build APK with Docker
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install system dependencies
         run: |
-          docker run --rm -v "$(pwd)":/home/user/hostcwd kivy/buildozer buildozer android debug
+          sudo apt update
+          sudo apt install -y git zip unzip openjdk-8-jdk python3-pip \
+            autoconf libtool pkg-config zlib1g-dev libncurses5-dev \
+            libncursesw5-dev cmake libffi-dev libssl-dev automake \
+            build-essential libltdl-dev
+
+      - name: Install buildozer
+        run: |
+          pip install --upgrade pip wheel setuptools
+          pip install buildozer==1.4.0 cython==0.29.33
+
+      - name: Build APK
+        run: |
+          export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+          export PATH=$JAVA_HOME/bin:$PATH
+          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          yes | buildozer android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: youtube-transcript-apk
           path: bin/*.apk
-          if-no-files-found: error
