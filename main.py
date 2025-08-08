@@ -3,6 +3,7 @@
 """
 YouTube Transcript AI Summarizer - Mobile Version
 Built with Kivy/KivyMD for Android deployment
+Keyring removed - uses file-based storage only
 """
 
 __version__ = "1.0"
@@ -443,7 +444,7 @@ class SettingsScreen(MDScreen):
             self.show_error(f"API key test failed: {str(e)}")
     
     def toggle_save_key(self, checkbox):
-        """Handle save key toggle"""
+        """Handle save key toggle - file storage only, no keyring"""
         if checkbox.active:
             api_key = self.ids.api_key_input.text.strip()
             if not api_key:
@@ -451,31 +452,43 @@ class SettingsScreen(MDScreen):
                 checkbox.active = False
                 return
             
-            # For Android, use simple file storage (keyring may not work)
-            if platform == 'android':
-                try:
+            # Use file storage for all platforms (no keyring)
+            try:
+                if platform == 'android':
                     config_dir = "/data/data/com.mine.youtubetranscript/files"
                     os.makedirs(config_dir, exist_ok=True)
                     config_file = os.path.join(config_dir, "api_key.txt")
-                    with open(config_file, 'w') as f:
-                        f.write(api_key)
-                    self.app.save_key_enabled = True
-                    toast("API key saved!")
-                except Exception as e:
-                    self.show_error(f"Failed to save key: {str(e)}")
-                    checkbox.active = False
-            else:
-                # Use keyring on desktop
-                try:
-                    import keyring
-                    keyring.set_password("youtube_transcript_mobile", "openai_api_key", api_key)
-                    self.app.save_key_enabled = True
-                    toast("API key saved securely!")
-                except Exception as e:
-                    self.show_error(f"Failed to save key: {str(e)}")
-                    checkbox.active = False
+                else:
+                    # Desktop: use home directory
+                    config_dir = os.path.expanduser("~/.youtube_transcript")
+                    os.makedirs(config_dir, exist_ok=True)
+                    config_file = os.path.join(config_dir, "api_key.txt")
+                
+                with open(config_file, 'w') as f:
+                    f.write(api_key)
+                
+                self.app.save_key_enabled = True
+                toast("API key saved!")
+                
+            except Exception as e:
+                self.show_error(f"Failed to save key: {str(e)}")
+                checkbox.active = False
         else:
-            self.app.save_key_enabled = False
+            # Remove saved key
+            try:
+                if platform == 'android':
+                    config_file = "/data/data/com.mine.youtubetranscript/files/api_key.txt"
+                else:
+                    config_file = os.path.expanduser("~/.youtube_transcript/api_key.txt")
+                
+                if os.path.exists(config_file):
+                    os.remove(config_file)
+                
+                self.app.save_key_enabled = False
+                toast("Saved key removed")
+                
+            except Exception as e:
+                self.show_error(f"Failed to remove key: {str(e)}")
     
     def update_model(self, model):
         """Update selected AI model"""
@@ -534,28 +547,21 @@ class YouTubeTranscriptApp(MDApp):
         return sm
     
     def load_saved_key(self):
-        """Load saved API key"""
+        """Load saved API key from file storage only"""
         try:
             if platform == 'android':
-                # Try to load from Android storage
                 config_file = "/data/data/com.mine.youtubetranscript/files/api_key.txt"
-                if os.path.exists(config_file):
-                    with open(config_file, 'r') as f:
-                        saved_key = f.read().strip()
-                        if saved_key:
-                            self.api_key = saved_key
-                            self.save_key_enabled = True
-                            self.openai_client = openai.OpenAI(api_key=saved_key)
-                            toast("API key loaded")
             else:
-                # Try keyring on desktop
-                import keyring
-                saved_key = keyring.get_password("youtube_transcript_mobile", "openai_api_key")
-                if saved_key:
-                    self.api_key = saved_key
-                    self.save_key_enabled = True
-                    self.openai_client = openai.OpenAI(api_key=saved_key)
-                    toast("API key loaded from keyring")
+                config_file = os.path.expanduser("~/.youtube_transcript/api_key.txt")
+            
+            if os.path.exists(config_file):
+                with open(config_file, 'r') as f:
+                    saved_key = f.read().strip()
+                    if saved_key:
+                        self.api_key = saved_key
+                        self.save_key_enabled = True
+                        self.openai_client = openai.OpenAI(api_key=saved_key)
+                        toast("API key loaded")
         except Exception:
             pass
     
