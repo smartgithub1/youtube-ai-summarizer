@@ -9,7 +9,7 @@
 
   jobs:
     build-android:
-      runs-on: ubuntu-latest
+      runs-on:  ubuntu-22.04
 
       steps:
       - name: Checkout code
@@ -79,7 +79,11 @@
             libffi-dev \
             libssl-dev \
             autoconf-archive \
+            autotools-dev \
             automake
+      - name: Fix libffi compatibility
+        run: |
+         sudo ln -sf /usr/share/aclocal/libtool.m4 /usr/share/aclocal/lt~obsolete.m4 || true 
 
       - name: Build with buildozer
         run: |
